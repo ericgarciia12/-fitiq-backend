@@ -8,10 +8,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Initialize OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Endpoint for chat
 app.post("/chat", async (req, res) => {
   const userMessage = req.body.message;
 
@@ -36,10 +38,12 @@ app.post("/chat", async (req, res) => {
   }
 });
 
+// Root test route
 app.get("/", (req, res) => {
   res.send("✅ FitIQ GPT Backend is Live!");
 });
 
+// ✅ Only ONE listen block!
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
   console.log(`FitIQ GPT backend running on port ${PORT}`);
