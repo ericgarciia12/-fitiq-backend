@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const { OpenAI } = require("openai"); // Updated for project-based API key compatibility
+const OpenAI = require("openai");
 require("dotenv").config();
 
 const app = express();
@@ -8,7 +8,7 @@ app.use(cors());
 app.use(express.json());
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY, // ✅ make sure this is set in Render!
 });
 
 app.post("/chat", async (req, res) => {
@@ -21,7 +21,7 @@ app.post("/chat", async (req, res) => {
         {
           role: "system",
           content:
-            "You're FitIQ, a chill but motivational gym assistant. Speak like a gym bro with facts — help users with workouts, macros, machines, and goals.",
+            "You’re FitIQ, a chill but motivational gym assistant. Answer like a helpful gym bro. Give clean advice on workouts, form, recovery, macros, reps, etc.",
         },
         { role: "user", content: userMessage },
       ],
@@ -31,9 +31,7 @@ app.post("/chat", async (req, res) => {
     res.json({ reply });
   } catch (err) {
     console.error("❌ GPT Error:", err.message);
-    res
-      .status(500)
-      .json({ reply: "❌ GPT failed to respond. Check API key or server logs." });
+    res.status(500).json({ reply: "❌ GPT failed to respond. Check API key or server logs." });
   }
 });
 
