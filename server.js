@@ -1,63 +1,52 @@
 const express = require("express");
 const cors = require("cors");
-const OpenAI = require("openai");
+const bodyParser = require("body-parser");
 require("dotenv").config();
+const { Configuration, OpenAIApi } = require("openai");
 
 const app = express();
+const PORT = process.env.PORT || 3001;
+
 app.use(cors());
 app.use(express.json());
+app.use(bodyParser.json());
 
-const openai = new OpenAI({
+// 🧠 Setup OpenAI
+const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
+const openai = new OpenAIApi(configuration);
 
+// ✅ Chat Route (uses systemPrompt + user input)
 app.post("/chat", async (req, res) => {
-  const userMessage = req.body.message;
-  const personality = req.body.personality || "chill";
+  const { message, systemPrompt } = req.body;
 
-  // Match the bot tone based on dropdown
-  let systemPrompt = "";
-
-  switch (personality) {
-    case "coach":
-      systemPrompt =
-        "You're FitIQ, a tough-love gym coach. Be direct and no-nonsense. Help with form, reps, recovery, and discipline.";
-      break;
-    case "doc":
-      systemPrompt =
-        "You're FitIQ, an expert fitness scientist. Respond with clear, technical explanations about biomechanics, hypertrophy, recovery, and nutrition.";
-      break;
-    default:
-      systemPrompt =
-        "You're FitIQ, a chill gym bro AI. Keep answers casual, helpful, and motivating. Talk like a smart friend who loves the gym.";
+  if (!message || !systemPrompt) {
+    return res.status(400).json({ error: "Missing message or systemPrompt" });
   }
 
   try {
-    const chatCompletion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo-0125",
+    const completion = await openai.createChatCompletion({
+      model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage },
+        { role: "user", content: message },
       ],
-      max_tokens: 200, // faster replies
-      temperature: 0.8, // keep it a bit spicy
     });
 
-    const reply = chatCompletion.choices[0].message.content;
+    const reply = completion.data.choices[0].message.content.trim();
     res.json({ reply });
-  } catch (err) {
-    console.error("❌ GPT Error:", err.message);
-    res
-      .status(500)
-      .json({ reply: "❌ GPT failed to respond. Try again later." });
+  } catch (error) {
+    console.error("❌ GPT error:", error.response?.data || error.message);
+    res.status(500).json({ error: "GPT failed to respond" });
   }
 });
 
+// 🌐 Root Test Route
 app.get("/", (req, res) => {
-  res.send("✅ FitIQ GPT Backend is Live!");
+  res.send("✅ FitIQ GPT backend is live");
 });
 
-const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-  console.log(`🔥 FitIQ GPT backend running on port ${PORT}`);
+  console.log(`✅ FitIQ GPT backend running on port ${PORT}`);
 });
